@@ -39,7 +39,7 @@ library(stringr)
 #-------------------------------------------------------------------------------
 
 ################################################################################
-# Piloto com 1 cenario
+# Piloto com 1 cenario downscalling
 ################################################################################
 
 # abrindo um cenario como exemplo
@@ -85,7 +85,7 @@ res(r_b) # ~5kmx5km
 
 crs <- crs(r_b)
 
-# loop pra gerar os rasters
+# loop pra gerar os rasters 5x5m
 
 adequando_resolucao_5x5km <- function(i){
 
@@ -106,7 +106,7 @@ adequando_resolucao_5x5km <- function(i){
   
   # nome do raster final
   
-  raster_name_2 <- paste0(ncname,'_',"rep_5x5km")
+  raster_name_2 <- paste0(raster_name_1,'_',"rep_5x5km","_",usos[i])
   
   # obs: os nomes das bandas se perde quando salvo
   
@@ -118,3 +118,55 @@ adequando_resolucao_5x5km <- function(i){
 
 lapply(X = 3:12,adequando_resolucao_5x5km)
 
+
+################################################################################
+# desagregando cenarios mantendo a resolucao original (0.5 x 0.5 graus)
+################################################################################
+
+
+
+desagregando_rasters <- function(i){
+  
+  # abre para cenario x, um determinado uso (i de 12)
+  r <- brick(cenario_path, varname="LC_area_share",level=i) #index
+  
+  # criando pasta pra cada uso (serao 12 total)
+  
+  dir.path <- file.path("projected_scen",usos[i]) #index
+  
+  dir.create(dir.path) 
+  
+  # subtrair 3 digitos do nome do arquivo(.nc)
+  
+  raster_name_1 <-str_remove(string = cenario,pattern = ".nc")
+  
+  # nome do raster final (precisa corrigir, pra gerar nome arquivo final)
+  
+  raster_name_2 <- paste0(raster_name_1,'_',"55x55km","_",usos[i])
+  
+  # obs: os nomes das bandas se perde quando salvo
+  
+  writeRaster(r,filename = file.path(dir.path,paste0(raster_name_2,".tif")),
+              overwrite=TRUE)
+}
+
+
+
+for(cen in 1:20) # loop nos 20 cenarios
+  
+  {
+  
+  cenario_path <-  file.path(p, pasta,scen[cen])
+  cenario <- scen[cen]
+  
+  lapply(X = 1:12,desagregando_rasters) # loop nos 12 usos do solo
+
+  } 
+
+
+
+
+
+#removes entire temp directory without affecting other running processes
+unlink(file.path(file.path(p,"/temp")), recursive = TRUE)
+gc()
